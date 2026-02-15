@@ -1,30 +1,50 @@
 import streamlit as st
+import pandas as pd
 import joblib
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 st.set_page_config(page_title="Shopper Spectrum", layout="wide")
 
 st.title("🛒 Shopper Spectrum")
 st.markdown("### Customer Segmentation & Product Recommendation")
 
-# Load Models
+# -------------------------
+# LOAD DATA FROM ONLINE SOURCE
+# -------------------------
+
 @st.cache_resource
-def load_models():
+def load_all():
+    
+    # Load dataset from public URL
+    url = "https://raw.githubusercontent.com/plotly/datasets/master/OnlineRetail.csv"
+    df = pd.read_csv(url, encoding='ISO-8859-1')
+
+    df = df.dropna(subset=['CustomerID'])
+    df = df[~df['InvoiceNo'].astype(str).str.startswith('C')]
+    df = df[(df['Quantity'] > 0) & (df['UnitPrice'] > 0)]
+
+    pivot = df.pivot_table(index='CustomerID',
+                           columns='Description',
+                           values='Quantity',
+                           fill_value=0)
+
+    similarity = cosine_similarity(pivot.T)
+
     kmeans = joblib.load("kmeans_model.pkl")
     scaler = joblib.load("scaler.pkl")
-    pivot = joblib.load("pivot.pkl")
-    similarity = joblib.load("similarity.pkl")
-    return kmeans, scaler, pivot, similarity
 
-kmeans, scaler, pivot, item_similarity = load_models()
+    return pivot, similarity, kmeans, scaler
+
+pivot, item_similarity, kmeans, scaler = load_all()
 
 menu = st.sidebar.selectbox("Choose Module",
                             ["Product Recommendation",
                              "Customer Segmentation"])
 
-# -----------------------------
+# -------------------------
 # PRODUCT RECOMMENDATION
-# -----------------------------
+# -------------------------
 
 if menu == "Product Recommendation":
 
@@ -48,9 +68,9 @@ if menu == "Product Recommendation":
             for i in similarity_scores:
                 st.write("✔", pivot.columns[i[0]])
 
-# -----------------------------
+# -------------------------
 # CUSTOMER SEGMENTATION
-# -----------------------------
+# -------------------------
 
 elif menu == "Customer Segmentation":
 
