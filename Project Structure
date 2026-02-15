@@ -1,0 +1,10 @@
+Shopper_Spectrum/
+│
+├── app.py
+├── online_retail.csv
+├── kmeans_model.pkl
+├── scaler.pkl
+├── pivot.pkl
+├── similarity.pkl
+├── requirements.txt
+└── README.md
